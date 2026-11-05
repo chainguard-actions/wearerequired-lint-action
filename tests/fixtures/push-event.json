@@ -1,0 +1,7 @@
+{
+  "ref": "refs/heads/act-harness",
+  "repository": {
+    "full_name": "actionchain-harness/lint-action",
+    "clone_url": "https://github.com/actionchain-harness/lint-action.git"
+  }
+}

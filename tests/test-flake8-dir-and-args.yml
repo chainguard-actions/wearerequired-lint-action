@@ -1,0 +1,71 @@
+name: Test flake8 custom dir and args
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Ensure event payload has ref and repository
+        run: |
+          node -e '
+            const fs = require("fs");
+            const p = process.env.GITHUB_EVENT_PATH;
+            let e = {};
+            try { e = JSON.parse(fs.readFileSync(p, "utf8")) || {}; } catch (err) {}
+            if (!e.ref) e.ref = "refs/heads/act-harness";
+            if (!e.repository) e.repository = {};
+            if (!e.repository.full_name) e.repository.full_name = process.env.GITHUB_REPOSITORY || "actionchain-harness/lint-action";
+            if (!e.repository.clone_url) e.repository.clone_url = "https://github.com/" + e.repository.full_name + ".git";
+            fs.writeFileSync(p, JSON.stringify(e));
+          '
+          cat "$GITHUB_EVENT_PATH"
+      - name: Install fake flake8 and python shim
+        run: |
+          mkdir -p /tmp/lint-bin
+          cp "$GITHUB_WORKSPACE/tests/fixtures/fake-flake8.sh" /tmp/lint-bin/flake8
+          chmod +x /tmp/lint-bin/flake8
+          if ! command -v python >/dev/null 2>&1; then
+            printf '#!/bin/sh\nexec python3 "$@"\n' > /tmp/lint-bin/python
+            chmod +x /tmp/lint-bin/python
+          fi
+          rm -f /tmp/flake8-calls.log
+          echo pass > /tmp/flake8-mode
+          echo /tmp/lint-bin >> "$GITHUB_PATH"
+      - id: action
+        uses: .
+        with:
+          flake8: "true"
+          flake8_dir: tests/fixtures
+          flake8_args: "--max-line-length 120"
+          flake8_extensions: "py,pyi"
+      - name: Assert flake8 ran in the configured dir with configured args
+        run: |
+          echo "--- calls ---"
+          cat /tmp/flake8-calls.log || true
+          LINT_LINE="$(grep -- '--filename' /tmp/flake8-calls.log | tail -n1)"
+          echo "lint call: $LINT_LINE"
+          case "$LINT_LINE" in
+            */tests/fixtures\|*) ;;
+            *) echo "FAIL: flake8 did not run in tests/fixtures"; exit 1 ;;
+          esac
+          if ! echo "$LINT_LINE" | grep -q -- '--max-line-length 120'; then
+            echo "FAIL: custom args not passed"
+            exit 1
+          fi
+          # The shell strips the quotes the action adds, so the logged args are unquoted
+          if ! echo "$LINT_LINE" | grep -qF -- '--filename **/*.py,**/*.pyi'; then
+            echo "FAIL: custom extensions not passed"
+            exit 1
+          fi
+          echo "PASS"
+      - name: Assert action succeeded
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" != "success" ]; then
+            echo "FAIL: expected success"
+            exit 1
+          fi
+          echo "PASS"

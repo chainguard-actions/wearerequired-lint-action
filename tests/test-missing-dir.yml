@@ -1,0 +1,44 @@
+name: Test nonexistent linter directory
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Install fake flake8 and python shim
+        run: |
+          mkdir -p /tmp/lint-bin
+          cp "$GITHUB_WORKSPACE/tests/fixtures/fake-flake8.sh" /tmp/lint-bin/flake8
+          chmod +x /tmp/lint-bin/flake8
+          if ! command -v python >/dev/null 2>&1; then
+            printf '#!/bin/sh\nexec python3 "$@"\n' > /tmp/lint-bin/python
+            chmod +x /tmp/lint-bin/python
+          fi
+          rm -f /tmp/flake8-calls.log
+          echo pass > /tmp/flake8-mode
+          echo /tmp/lint-bin >> "$GITHUB_PATH"
+      - id: action
+        uses: .
+        continue-on-error: true
+        env:
+          GITHUB_EVENT_NAME: push
+          GITHUB_EVENT_PATH: ${{ github.workspace }}/tests/fixtures/push-event.json
+        with:
+          flake8: "true"
+          flake8_dir: does-not-exist-dir
+      - name: Assert action failed and flake8 never ran
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" != "failure" ]; then
+            echo "FAIL: expected failure for nonexistent directory"
+            exit 1
+          fi
+          if [ -s /tmp/flake8-calls.log ]; then
+            echo "FAIL: flake8 should not have been invoked"
+            cat /tmp/flake8-calls.log
+            exit 1
+          fi
+          echo "PASS"

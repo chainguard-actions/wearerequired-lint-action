@@ -1,0 +1,56 @@
+name: Test flake8 errors with continue_on_error default
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Ensure event payload has ref and repository
+        run: |
+          node -e '
+            const fs = require("fs");
+            const p = process.env.GITHUB_EVENT_PATH;
+            let e = {};
+            try { e = JSON.parse(fs.readFileSync(p, "utf8")) || {}; } catch (err) {}
+            if (!e.ref) e.ref = "refs/heads/act-harness";
+            if (!e.repository) e.repository = {};
+            if (!e.repository.full_name) e.repository.full_name = process.env.GITHUB_REPOSITORY || "actionchain-harness/lint-action";
+            if (!e.repository.clone_url) e.repository.clone_url = "https://github.com/" + e.repository.full_name + ".git";
+            fs.writeFileSync(p, JSON.stringify(e));
+          '
+          cat "$GITHUB_EVENT_PATH"
+      - name: Install fake flake8 (failing mode) and python shim
+        run: |
+          mkdir -p /tmp/lint-bin
+          cp "$GITHUB_WORKSPACE/tests/fixtures/fake-flake8.sh" /tmp/lint-bin/flake8
+          chmod +x /tmp/lint-bin/flake8
+          if ! command -v python >/dev/null 2>&1; then
+            printf '#!/bin/sh\nexec python3 "$@"\n' > /tmp/lint-bin/python
+            chmod +x /tmp/lint-bin/python
+          fi
+          rm -f /tmp/flake8-calls.log
+          echo fail > /tmp/flake8-mode
+          echo /tmp/lint-bin >> "$GITHUB_PATH"
+      - id: action
+        uses: .
+        with:
+          flake8: "true"
+      - name: Assert flake8 lint ran
+        run: |
+          cat /tmp/flake8-calls.log || true
+          if ! grep -q -- '--filename' /tmp/flake8-calls.log; then
+            echo "FAIL: flake8 lint command was not executed"
+            exit 1
+          fi
+          echo "PASS"
+      - name: Assert action succeeded despite lint failures
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" != "success" ]; then
+            echo "FAIL: expected success because continue_on_error defaults to true"
+            exit 1
+          fi
+          echo "PASS"

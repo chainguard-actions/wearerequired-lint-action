@@ -1,0 +1,274 @@
+name: Test nonexistent directory for every linter
+on:
+  workflow_dispatch:
+env:
+  GITHUB_EVENT_NAME: push
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Ensure missing directory really is missing
+        run: |
+          rm -rf "$GITHUB_WORKSPACE/no-such-lint-dir"
+          if [ -e "$GITHUB_WORKSPACE/no-such-lint-dir" ]; then echo "FAIL: dir exists"; exit 1; fi
+          echo "PASS"
+      - id: stylelint
+        uses: .
+        continue-on-error: true
+        env:
+          GITHUB_EVENT_PATH: ${{ github.workspace }}/tests/fixtures/push-event.json
+        with:
+          stylelint: "true"
+          stylelint_dir: no-such-lint-dir
+      - id: gofmt
+        uses: .
+        continue-on-error: true
+        env:
+          GITHUB_EVENT_PATH: ${{ github.workspace }}/tests/fixtures/push-event.json
+        with:
+          gofmt: "true"
+          gofmt_dir: no-such-lint-dir
+      - id: golint
+        uses: .
+        continue-on-error: true
+        env:
+          GITHUB_EVENT_PATH: ${{ github.workspace }}/tests/fixtures/push-event.json
+        with:
+          golint: "true"
+          golint_dir: no-such-lint-dir
+      - id: staticcheck
+        uses: .
+        continue-on-error: true
+        env:
+          GITHUB_EVENT_PATH: ${{ github.workspace }}/tests/fixtures/push-event.json
+        with:
+          staticcheck: "true"
+          staticcheck_dir: no-such-lint-dir
+      - id: eslint
+        uses: .
+        continue-on-error: true
+        env:
+          GITHUB_EVENT_PATH: ${{ github.workspace }}/tests/fixtures/push-event.json
+        with:
+          eslint: "true"
+          eslint_dir: no-such-lint-dir
+      - id: prettier
+        uses: .
+        continue-on-error: true
+        env:
+          GITHUB_EVENT_PATH: ${{ github.workspace }}/tests/fixtures/push-event.json
+        with:
+          prettier: "true"
+          prettier_dir: no-such-lint-dir
+      - id: xo
+        uses: .
+        continue-on-error: true
+        env:
+          GITHUB_EVENT_PATH: ${{ github.workspace }}/tests/fixtures/push-event.json
+        with:
+          xo: "true"
+          xo_dir: no-such-lint-dir
+      - id: tsc
+        uses: .
+        continue-on-error: true
+        env:
+          GITHUB_EVENT_PATH: ${{ github.workspace }}/tests/fixtures/push-event.json
+        with:
+          tsc: "true"
+          tsc_dir: no-such-lint-dir
+      - id: php_codesniffer
+        uses: .
+        continue-on-error: true
+        env:
+          GITHUB_EVENT_PATH: ${{ github.workspace }}/tests/fixtures/push-event.json
+        with:
+          php_codesniffer: "true"
+          php_codesniffer_dir: no-such-lint-dir
+      - id: autopep8
+        uses: .
+        continue-on-error: true
+        env:
+          GITHUB_EVENT_PATH: ${{ github.workspace }}/tests/fixtures/push-event.json
+        with:
+          autopep8: "true"
+          autopep8_dir: no-such-lint-dir
+      - id: black
+        uses: .
+        continue-on-error: true
+        env:
+          GITHUB_EVENT_PATH: ${{ github.workspace }}/tests/fixtures/push-event.json
+        with:
+          black: "true"
+          black_dir: no-such-lint-dir
+      - id: clang_format
+        uses: .
+        continue-on-error: true
+        env:
+          GITHUB_EVENT_PATH: ${{ github.workspace }}/tests/fixtures/push-event.json
+        with:
+          clang_format: "true"
+          clang_format_dir: no-such-lint-dir
+      - id: isort
+        uses: .
+        continue-on-error: true
+        env:
+          GITHUB_EVENT_PATH: ${{ github.workspace }}/tests/fixtures/push-event.json
+        with:
+          isort: "true"
+          isort_dir: no-such-lint-dir
+      - id: mypy
+        uses: .
+        continue-on-error: true
+        env:
+          GITHUB_EVENT_PATH: ${{ github.workspace }}/tests/fixtures/push-event.json
+        with:
+          mypy: "true"
+          mypy_dir: no-such-lint-dir
+      - id: oitnb
+        uses: .
+        continue-on-error: true
+        env:
+          GITHUB_EVENT_PATH: ${{ github.workspace }}/tests/fixtures/push-event.json
+        with:
+          oitnb: "true"
+          oitnb_dir: no-such-lint-dir
+      - id: pylint
+        uses: .
+        continue-on-error: true
+        env:
+          GITHUB_EVENT_PATH: ${{ github.workspace }}/tests/fixtures/push-event.json
+        with:
+          pylint: "true"
+          pylint_dir: no-such-lint-dir
+      - id: ruff
+        uses: .
+        continue-on-error: true
+        env:
+          GITHUB_EVENT_PATH: ${{ github.workspace }}/tests/fixtures/push-event.json
+        with:
+          ruff: "true"
+          ruff_dir: no-such-lint-dir
+      - id: rubocop
+        uses: .
+        continue-on-error: true
+        env:
+          GITHUB_EVENT_PATH: ${{ github.workspace }}/tests/fixtures/push-event.json
+        with:
+          rubocop: "true"
+          rubocop_dir: no-such-lint-dir
+      - id: standardrb
+        uses: .
+        continue-on-error: true
+        env:
+          GITHUB_EVENT_PATH: ${{ github.workspace }}/tests/fixtures/push-event.json
+        with:
+          standardrb: "true"
+          standardrb_dir: no-such-lint-dir
+      - id: erblint
+        uses: .
+        continue-on-error: true
+        env:
+          GITHUB_EVENT_PATH: ${{ github.workspace }}/tests/fixtures/push-event.json
+        with:
+          erblint: "true"
+          erblint_dir: no-such-lint-dir
+      - id: clippy
+        uses: .
+        continue-on-error: true
+        env:
+          GITHUB_EVENT_PATH: ${{ github.workspace }}/tests/fixtures/push-event.json
+        with:
+          clippy: "true"
+          clippy_dir: no-such-lint-dir
+      - id: rustfmt
+        uses: .
+        continue-on-error: true
+        env:
+          GITHUB_EVENT_PATH: ${{ github.workspace }}/tests/fixtures/push-event.json
+        with:
+          rustfmt: "true"
+          rustfmt_dir: no-such-lint-dir
+      - id: swiftformat
+        uses: .
+        continue-on-error: true
+        env:
+          GITHUB_EVENT_PATH: ${{ github.workspace }}/tests/fixtures/push-event.json
+        with:
+          swiftformat: "true"
+          swiftformat_dir: no-such-lint-dir
+      - id: swift_format_lockwood
+        uses: .
+        continue-on-error: true
+        env:
+          GITHUB_EVENT_PATH: ${{ github.workspace }}/tests/fixtures/push-event.json
+        with:
+          swift_format_lockwood: "true"
+          swift_format_lockwood_dir: no-such-lint-dir
+      - id: swift_format_official
+        uses: .
+        continue-on-error: true
+        env:
+          GITHUB_EVENT_PATH: ${{ github.workspace }}/tests/fixtures/push-event.json
+        with:
+          swift_format_official: "true"
+          swift_format_official_dir: no-such-lint-dir
+      - id: swiftlint
+        uses: .
+        continue-on-error: true
+        env:
+          GITHUB_EVENT_PATH: ${{ github.workspace }}/tests/fixtures/push-event.json
+        with:
+          swiftlint: "true"
+          swiftlint_dir: no-such-lint-dir
+      - id: dotnet_format
+        uses: .
+        continue-on-error: true
+        env:
+          GITHUB_EVENT_PATH: ${{ github.workspace }}/tests/fixtures/push-event.json
+        with:
+          dotnet_format: "true"
+          dotnet_format_dir: no-such-lint-dir
+      - name: Assert every linter failed on the nonexistent directory
+        env:
+          OUTCOMES: >-
+            stylelint=${{ steps.stylelint.outcome }}
+            gofmt=${{ steps.gofmt.outcome }}
+            golint=${{ steps.golint.outcome }}
+            staticcheck=${{ steps.staticcheck.outcome }}
+            eslint=${{ steps.eslint.outcome }}
+            prettier=${{ steps.prettier.outcome }}
+            xo=${{ steps.xo.outcome }}
+            tsc=${{ steps.tsc.outcome }}
+            php_codesniffer=${{ steps.php_codesniffer.outcome }}
+            autopep8=${{ steps.autopep8.outcome }}
+            black=${{ steps.black.outcome }}
+            clang_format=${{ steps.clang_format.outcome }}
+            isort=${{ steps.isort.outcome }}
+            mypy=${{ steps.mypy.outcome }}
+            oitnb=${{ steps.oitnb.outcome }}
+            pylint=${{ steps.pylint.outcome }}
+            ruff=${{ steps.ruff.outcome }}
+            rubocop=${{ steps.rubocop.outcome }}
+            standardrb=${{ steps.standardrb.outcome }}
+            erblint=${{ steps.erblint.outcome }}
+            clippy=${{ steps.clippy.outcome }}
+            rustfmt=${{ steps.rustfmt.outcome }}
+            swiftformat=${{ steps.swiftformat.outcome }}
+            swift_format_lockwood=${{ steps.swift_format_lockwood.outcome }}
+            swift_format_official=${{ steps.swift_format_official.outcome }}
+            swiftlint=${{ steps.swiftlint.outcome }}
+            dotnet_format=${{ steps.dotnet_format.outcome }}
+        run: |
+          rc=0
+          for pair in $OUTCOMES; do
+            name="${pair%%=*}"
+            outcome="${pair#*=}"
+            echo "$name: $outcome"
+            if [ "$outcome" != "failure" ]; then
+              echo "FAIL: $name expected failure for nonexistent directory, got '$outcome'"
+              rc=1
+            fi
+          done
+          [ "$rc" -eq 0 ] && echo "PASS"
+          exit $rc

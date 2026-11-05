@@ -1,0 +1,35 @@
+name: Test no linters enabled
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Ensure event payload has ref and repository
+        run: |
+          echo "event path: $GITHUB_EVENT_PATH"
+          node -e '
+            const fs = require("fs");
+            const p = process.env.GITHUB_EVENT_PATH;
+            let e = {};
+            try { e = JSON.parse(fs.readFileSync(p, "utf8")) || {}; } catch (err) {}
+            if (!e.ref) e.ref = "refs/heads/act-harness";
+            if (!e.repository) e.repository = {};
+            if (!e.repository.full_name) e.repository.full_name = process.env.GITHUB_REPOSITORY || "actionchain-harness/lint-action";
+            if (!e.repository.clone_url) e.repository.clone_url = "https://github.com/" + e.repository.full_name + ".git";
+            fs.writeFileSync(p, JSON.stringify(e));
+          '
+          cat "$GITHUB_EVENT_PATH"
+      - id: action
+        uses: .
+      - name: Assert action succeeded
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" != "success" ]; then
+            echo "FAIL: expected success"
+            exit 1
+          fi
+          echo "PASS"
