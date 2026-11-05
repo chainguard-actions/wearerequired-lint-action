@@ -1,0 +1,68 @@
+name: Test dir inputs of disabled linters are ignored
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Set up fake linters (clean)
+        run: bash tests/fixtures/setup-fake-linters.sh clean
+      - id: action
+        uses: .
+        env:
+          GITHUB_EVENT_PATH: /tmp/fake-lint/event.json
+        with:
+          continue_on_error: "false"
+          flake8: "true"
+          # All of the following linters are disabled (default "false"), so their
+          # nonexistent directories must NOT trigger the "doesn't exist" error.
+          autopep8_dir: does-not-exist-autopep8
+          black_dir: does-not-exist-black
+          clang_format_dir: does-not-exist-clang-format
+          clippy_dir: does-not-exist-clippy
+          dotnet_format_dir: does-not-exist-dotnet-format
+          erblint_dir: does-not-exist-erblint
+          eslint_dir: does-not-exist-eslint
+          gofmt_dir: does-not-exist-gofmt
+          golint_dir: does-not-exist-golint
+          isort_dir: does-not-exist-isort
+          mypy_dir: does-not-exist-mypy
+          oitnb_dir: does-not-exist-oitnb
+          php_codesniffer_dir: does-not-exist-phpcs
+          prettier_dir: does-not-exist-prettier
+          pylint_dir: does-not-exist-pylint
+          rubocop_dir: does-not-exist-rubocop
+          ruff_dir: does-not-exist-ruff
+          rustfmt_dir: does-not-exist-rustfmt
+          standardrb_dir: does-not-exist-standardrb
+          staticcheck_dir: does-not-exist-staticcheck
+          stylelint_dir: does-not-exist-stylelint
+          swift_format_lockwood_dir: does-not-exist-swift-lockwood
+          swift_format_official_dir: does-not-exist-swift-official
+          swiftformat_dir: does-not-exist-swiftformat
+          swiftlint_dir: does-not-exist-swiftlint
+          tsc_dir: does-not-exist-tsc
+          xo_dir: does-not-exist-xo
+      - name: Assert action succeeded
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" != "success" ]; then
+            echo "FAIL: expected success; disabled linters' dirs should be ignored"
+            exit 1
+          fi
+          echo "PASS"
+      - name: Assert enabled flake8 still ran in the workspace root
+        run: |
+          cat /tmp/fake-lint/flake8.log
+          if ! grep -q -- '--filename \*\*/\*\.py' /tmp/fake-lint/flake8.log; then
+            echo "FAIL: flake8 was not run"
+            exit 1
+          fi
+          if ! grep -q "cwd=$GITHUB_WORKSPACE " /tmp/fake-lint/flake8.log; then
+            echo "FAIL: flake8 did not run in the workspace root"
+            exit 1
+          fi
+          echo "PASS"

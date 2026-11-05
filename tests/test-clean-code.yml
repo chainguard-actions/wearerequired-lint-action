@@ -1,0 +1,44 @@
+name: Test clean code passes
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Set up fake linters (clean)
+        run: bash tests/fixtures/setup-fake-linters.sh clean
+      - id: action
+        uses: .
+        env:
+          GITHUB_EVENT_PATH: /tmp/fake-lint/event.json
+        with:
+          continue_on_error: "false"
+          flake8: "true"
+      - name: Assert flake8 was verified and run with default extension
+        run: |
+          echo "--- flake8 invocations ---"
+          cat /tmp/fake-lint/flake8.log
+          if ! grep -q -- "args=--version" /tmp/fake-lint/flake8.log; then
+            echo "FAIL: flake8 --version (setup verification) was not called"
+            exit 1
+          fi
+          if ! grep -q -- '--filename \*\*/\*\.py' /tmp/fake-lint/flake8.log; then
+            echo "FAIL: flake8 was not run with --filename **/*.py"
+            exit 1
+          fi
+          if ! grep -q "cwd=$GITHUB_WORKSPACE " /tmp/fake-lint/flake8.log; then
+            echo "FAIL: flake8 did not run in the workspace root"
+            exit 1
+          fi
+          echo "PASS"
+      - name: Assert action succeeded
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" != "success" ]; then
+            echo "FAIL: expected success"
+            exit 1
+          fi
+          echo "PASS"

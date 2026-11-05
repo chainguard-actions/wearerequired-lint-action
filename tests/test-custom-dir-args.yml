@@ -1,0 +1,50 @@
+name: Test custom lint dir, extensions and args
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Set up fake linters (clean)
+        run: bash tests/fixtures/setup-fake-linters.sh clean
+      - id: action
+        uses: .
+        env:
+          GITHUB_EVENT_PATH: /tmp/fake-lint/event.json
+        with:
+          continue_on_error: "false"
+          flake8: "true"
+          flake8_dir: tests/fixtures
+          flake8_extensions: "py,pyi"
+          flake8_args: "--max-line-length=120"
+          check_name: "${linter} (${dir})"
+      - name: Assert flake8 received custom options
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          cat /tmp/fake-lint/flake8.log
+          echo "outcome: $OUTCOME"
+          LINT_LINE="$(grep -- '--filename' /tmp/fake-lint/flake8.log || true)"
+          echo "lint invocation: $LINT_LINE"
+          if [ -z "$LINT_LINE" ]; then
+            echo "FAIL: lint command not executed"
+            exit 1
+          fi
+          case "$LINT_LINE" in
+            "cwd=$GITHUB_WORKSPACE/tests/fixtures "*) ;;
+            *) echo "FAIL: flake8 did not run in tests/fixtures"; exit 1 ;;
+          esac
+          if ! echo "$LINT_LINE" | grep -q -- '\*\*/\*\.py,\*\*/\*\.pyi'; then
+            echo "FAIL: custom extensions not passed"
+            exit 1
+          fi
+          if ! echo "$LINT_LINE" | grep -q -- '--max-line-length=120'; then
+            echo "FAIL: custom args not passed"
+            exit 1
+          fi
+          if [ "$OUTCOME" != "success" ]; then
+            echo "FAIL: expected success"
+            exit 1
+          fi
+          echo "PASS"

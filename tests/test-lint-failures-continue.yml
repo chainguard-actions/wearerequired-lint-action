@@ -1,0 +1,31 @@
+name: Test lint failures do not fail the step by default
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Set up fake linters (errors)
+        run: bash tests/fixtures/setup-fake-linters.sh errors
+      - id: action
+        uses: .
+        env:
+          GITHUB_EVENT_PATH: /tmp/fake-lint/event.json
+        with:
+          flake8: "true"
+      - name: Assert flake8 lint ran and action succeeded
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          cat /tmp/fake-lint/flake8.log
+          echo "outcome: $OUTCOME"
+          if ! grep -q -- '--filename' /tmp/fake-lint/flake8.log; then
+            echo "FAIL: flake8 lint command was not executed"
+            exit 1
+          fi
+          if [ "$OUTCOME" != "success" ]; then
+            echo "FAIL: expected success with default continue_on_error=true"
+            exit 1
+          fi
+          echo "PASS"

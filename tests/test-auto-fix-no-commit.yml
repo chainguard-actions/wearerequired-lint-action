@@ -1,0 +1,53 @@
+name: Test auto_fix without commit
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Set up fake linters and an unformatted file
+        run: |
+          bash tests/fixtures/setup-fake-linters.sh clean
+          rm -rf "$GITHUB_WORKSPACE/autofix-target"
+          mkdir -p "$GITHUB_WORKSPACE/autofix-target"
+          printf 'x=1\n' > "$GITHUB_WORKSPACE/autofix-target/sample.py"
+          git rev-parse HEAD > /tmp/fake-lint/head-before
+      - id: action
+        uses: .
+        env:
+          GITHUB_EVENT_PATH: /tmp/fake-lint/event.json
+        with:
+          continue_on_error: "false"
+          auto_fix: "true"
+          commit: "false"
+          black: "true"
+          black_dir: autofix-target
+      - name: Assert file was auto-fixed and no commit was created
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          cat /tmp/fake-lint/black.log
+          CONTENT="$(cat "$GITHUB_WORKSPACE/autofix-target/sample.py")"
+          echo "content: $CONTENT"
+          if grep -q -- '--check' /tmp/fake-lint/black.log; then
+            echo "FAIL: black ran in check mode instead of fix mode"
+            exit 1
+          fi
+          if [ "$CONTENT" != "x = 1" ]; then
+            echo "FAIL: file was not auto-fixed"
+            exit 1
+          fi
+          if [ "$(git rev-parse HEAD)" != "$(cat /tmp/fake-lint/head-before)" ]; then
+            echo "FAIL: a commit was created although commit=false"
+            exit 1
+          fi
+          if [ "$OUTCOME" != "success" ]; then
+            echo "FAIL: expected success"
+            exit 1
+          fi
+          echo "PASS"
+      - name: Clean up
+        if: always()
+        run: rm -rf "$GITHUB_WORKSPACE/autofix-target"
