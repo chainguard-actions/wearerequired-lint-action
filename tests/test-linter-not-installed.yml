@@ -1,0 +1,30 @@
+name: Test linter not installed
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Prepare event payload and a broken flake8
+        run: bash tests/fixtures/setup-fake-flake8.sh broken
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          flake8: "true"
+      - name: Assert action failed during setup verification
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          cat /tmp/flake8-calls.log
+          if [ "$OUTCOME" != "failure" ]; then
+            echo "FAIL: expected failure when flake8 is not runnable"
+            exit 1
+          fi
+          if grep -q -- '--filename' /tmp/flake8-calls.log; then
+            echo "FAIL: lint should not run when setup verification fails"
+            exit 1
+          fi
+          echo "PASS"

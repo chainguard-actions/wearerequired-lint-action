@@ -1,0 +1,40 @@
+name: Test auto_fix configures git user info
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Prepare event payload and fake flake8
+        run: bash tests/fixtures/setup-fake-flake8.sh clean
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          flake8: "true"
+          auto_fix: "true"
+          git_name: "Lint Test Bot"
+          git_email: "lint-test-bot@example.com"
+      - name: Assert git user info was configured
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          NAME="$(git config --global user.name || true)"
+          EMAIL="$(git config --global user.email || true)"
+          echo "name: $NAME"
+          echo "email: $EMAIL"
+          if [ "$OUTCOME" != "success" ]; then
+            echo "FAIL: expected success"
+            exit 1
+          fi
+          if [ "$NAME" != "Lint Test Bot" ]; then
+            echo "FAIL: git user.name not set"
+            exit 1
+          fi
+          if [ "$EMAIL" != "lint-test-bot@example.com" ]; then
+            echo "FAIL: git user.email not set"
+            exit 1
+          fi
+          echo "PASS"

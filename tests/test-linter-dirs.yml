@@ -1,0 +1,66 @@
+name: Test per-linter directory inputs
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Prepare event payload and fake flake8
+        run: bash tests/fixtures/setup-fake-flake8.sh clean
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          continue_on_error: "false"
+          flake8: "true"
+          flake8_dir: tests/fixtures
+          # The linters below are disabled; their _dir inputs must be ignored
+          # (a nonexistent dir for a disabled linter must NOT cause failure).
+          autopep8_dir: tests/fixtures
+          black_dir: tests/fixtures
+          clang_format_dir: tests/fixtures
+          clippy_dir: tests/fixtures
+          dotnet_format_dir: tests/fixtures
+          erblint_dir: tests/fixtures
+          eslint_dir: tests/fixtures
+          gofmt_dir: tests/fixtures
+          golint_dir: tests/fixtures
+          isort_dir: tests/fixtures
+          mypy_dir: tests/fixtures
+          oitnb_dir: tests/fixtures
+          php_codesniffer_dir: tests/fixtures
+          prettier_dir: tests/fixtures
+          pylint_dir: tests/fixtures
+          rubocop_dir: tests/fixtures
+          ruff_dir: tests/fixtures
+          rustfmt_dir: tests/fixtures
+          standardrb_dir: tests/fixtures
+          staticcheck_dir: tests/fixtures
+          stylelint_dir: this-directory-does-not-exist
+          swift_format_lockwood_dir: this-directory-does-not-exist
+          swift_format_official_dir: this-directory-does-not-exist
+          swiftformat_dir: this-directory-does-not-exist
+          swiftlint_dir: this-directory-does-not-exist
+          tsc_dir: this-directory-does-not-exist
+          xo_dir: this-directory-does-not-exist
+      - name: Assert flake8 ran inside flake8_dir and disabled linters' dirs were ignored
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          echo "--- flake8 calls ---"
+          cat /tmp/flake8-calls.log
+          if [ "$OUTCOME" != "success" ]; then
+            echo "FAIL: expected success"
+            exit 1
+          fi
+          if ! grep -qE '^PWD: .*/tests/fixtures$' /tmp/flake8-calls.log; then
+            echo "FAIL: flake8 was not run in tests/fixtures"
+            exit 1
+          fi
+          if grep -E '^PWD: ' /tmp/flake8-calls.log | grep -vqE '/tests/fixtures$'; then
+            echo "FAIL: flake8 ran outside tests/fixtures"
+            exit 1
+          fi
+          echo "PASS"
