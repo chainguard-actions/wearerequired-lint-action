@@ -8,6 +8,7 @@ Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at
 
 | Version | Tag | Upstream commit | Hardening report |
 |---------|-----|-----------------|------------------|
+| v3.0.0 | [`v3.0.0`](https://github.com/chainguard-actions/wearerequired-lint-action/tree/v3.0.0) | [`52d6fc5`](https://github.com/wearerequired/lint-action/commit/52d6fc54110bb04d626676af138f2c6544793ba4) | [`HARDENING.md`](https://github.com/chainguard-actions/wearerequired-lint-action/blob/v3.0.0/HARDENING.md) |
 | v3.0.1 | [`v3.0.1`](https://github.com/chainguard-actions/wearerequired-lint-action/tree/v3.0.1) | [`60bed9b`](https://github.com/wearerequired/lint-action/commit/60bed9b8134d170fe19c3b5a924b612217f53b4b) | [`HARDENING.md`](https://github.com/chainguard-actions/wearerequired-lint-action/blob/v3.0.1/HARDENING.md) |
 | v3.0.2 | [`v3.0.2`](https://github.com/chainguard-actions/wearerequired-lint-action/tree/v3.0.2) | [`124229c`](https://github.com/wearerequired/lint-action/commit/124229c6e2974984ba137c67a499ba28bfc33e33) | [`HARDENING.md`](https://github.com/chainguard-actions/wearerequired-lint-action/blob/v3.0.2/HARDENING.md) |
 
